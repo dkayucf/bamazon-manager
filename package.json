@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/dkayucf/bamazon-manager/issues"
   },
-  "homepage": "https://github.com/dkayucf/bamazon-manager#readme"
+  "homepage": "https://github.com/dkayucf/bamazon-manager#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^5.2.0",
+    "mysql": "^2.15.0"
+  }
 }
