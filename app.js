@@ -34,6 +34,7 @@ function customerCheck(){
     });
 }
 
+
 function managerCredentials(){
     console.log('Enter your credentials');
     
@@ -43,25 +44,51 @@ function managerCredentials(){
             name: 'userName',
             message: 'Username (demo):',
             validate: function(input){
-                connection.query(`SELECT user_name FROM users WHERE user_name = ${input}`, function (error, results, fields) {
-                    console.log(results);
-                });    
+                return input !== '';
             }
         },
         {
             type: 'password',
             name: 'password',
+            mask: '*',
             message: 'Password (pass):',
             validate: function(input){
-                console.log(input);
+                return input !== '';
             }
         }
     ])
     .then(answers => {
-        
+  
+        let userName = answers.userName;
+        let password = answers.password;
+        if(userName && password){
+            connection.query(`SELECT * FROM users WHERE user_name = '${userName}' AND  user_pass = '${password}'`, function (error, results, fields) {
+               if(error) throw error;
+                if(results.length === 0){
+                    console.log('Incorrect Credentials. Please Try again.');
+                    managerCredentials();
+                }else{
+                    managerPromptInit(userName);
+                }
+            });
+        }
+         
     });
-    
-    
+}
+
+function managerPromptInit(userName){
+    console.log(`\n ### Welcome ${userName}, you are now logged in to Bamazons Manager Suite. ### \n`);
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'selectOption',
+            message: `How may I help you today ${userName}?`,
+            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add new product']
+        }
+    ])
+    .then(answers => {
+        console.log(answers);
+    });
 }
 
 function displayTableInit(continuePrompt){
