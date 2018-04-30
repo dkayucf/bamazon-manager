@@ -16,4 +16,4 @@
 ![alt text](https://github.com/dkayucf/bamazon-manager/blob/master/img/addtoinv.gif "Bamazon manager prompt")
 
 ### Manager - Add New Product to Inventory
-![alt text](https://github.com/dkayucf/bamazon-manager/blob/master/img/addtoinv.gif "Bamazon manager prompt")
+![alt text](https://github.com/dkayucf/bamazon-manager/blob/master/img/addNewProduct.gif "Bamazon manager prompt")
