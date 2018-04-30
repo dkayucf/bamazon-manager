@@ -68,7 +68,9 @@ function managerCredentials(){
                     console.log('Incorrect Credentials. Please Try again.');
                     managerCredentials();
                 }else{
+                    console.log(`\n ### Welcome ${userName}, you are now logged in to Bamazons Manager Suite. ### \n`);
                     managerPromptInit(userName);
+                    
                 }
             });
         }
@@ -77,28 +79,154 @@ function managerCredentials(){
 }
 
 function managerPromptInit(userName){
-    console.log(`\n ### Welcome ${userName}, you are now logged in to Bamazons Manager Suite. ### \n`);
     inquirer.prompt([
         {
             type: 'list',
             name: 'selectOption',
-            message: `How may I help you today ${userName}?`,
-            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add new product']
+            message: `\n How may I help you today ${userName}?`,
+            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add new product', 'I am done for the day']
         }
     ])
     .then(answers => {
-        console.log(answers);
+        switch(answers.selectOption) {
+            case 'View Products for Sale':
+                displayTableInit(false, true, userName);
+                break;
+            case 'View Low Inventory':
+                lowInvItems(userName);
+                break;
+            case 'Add to Inventory':
+                addInventory(userName);
+                break;
+            case 'Add new product':
+                departmentChoices(userName);
+                break;
+            case 'I am done for the day':
+                console.log('\nHave a great day! I look forward to seeing you soon.\n')
+                connection.end();
+                break;
+        }
     });
 }
 
-function displayTableInit(continuePrompt){
+function departmentChoices(userName){
+
+        connection.query(`SELECT department_name FROM products`, function (error, results, fields) {
+            if (error) throw error;           
+                let choices = results.map(x => x.department_name).filter((item, pos, self) => self.indexOf(item) == pos);
+
+                addProduct(userName, choices)
+        });
+}
+
+
+function addProduct(userName, choices){
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'product_name',
+            message: 'What is the name of the product you would like to add?'
+        },
+        {
+            type: 'list',
+            name: 'department_name',
+            message: 'What department is this product located in?',
+            choices: choices
+        },
+        {
+            type: 'input',
+            name: 'price',
+            message: 'How much do they cost?'
+        },
+        {
+            type: 'input',
+            name: 'stock_quantity',
+            message: 'How many are in stock?'
+        }
+    ])
+    .then(answers => {
+        
+        connection.query('INSERT INTO products SET ?', answers, function (error, results, fields) {
+
+            console.log(`\n ${answers.stock_quantity} ${answers.product_name} were added to your inventory.\n`);
+            
+            displayTableInit(false, true, userName);
+
+              
+        });   
+    });
+}
+
+function lowInvItems(userName){
+    connection.query('SELECT * FROM products WHERE stock_quantity <= 5', function (error, results, fields) {
+          if (error) throw error;
+            console.table(results);
+            inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'addInventory',
+                    message: 'These items have low inventory levels. \n Would you like me to add some inventory for you?'
+                }
+            ])
+            .then(answers => {
+                if(answers.addInventory){
+                    addInventory(userName);
+                }else{
+                    managerPromptInit(userName);
+                }
+            });
+     }); 
+}
+
+
+function addInventory(userName){
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'productId',
+            message: 'Which inventory item_id would you like me to add inventory to?'
+        },
+        {
+            type: 'input',
+            name: 'qtyAdded',
+            message: 'How many inventory units shall I add?'
+        }
+    ])
+    .then(answers => {
+        connection.query(`SELECT * FROM products WHERE item_id = ${answers.productId}`, function (error, results, fields) {
+
+            if (error) throw error;           
+                let stockQty = parseInt(results[0].stock_quantity);
+                let QTYAdded = parseInt(answers.qtyAdded);
+                let productName = results[0].product_name;
+                
+            connection.query(`UPDATE products SET stock_quantity = ${stockQty + QTYAdded} WHERE item_id = ${answers.productId} `, function (error, results, fields) {
+                if (error) throw error;
+                console.log(`${QTYAdded} units of ${productName} were added to your inventory. \n New Total Qty: ${stockQty + QTYAdded}\n`);
+                displayTableInit(false, true, userName);
+            });  
+              
+        });
+        
+        
+        
+    });
+}
+
+function displayTableInit(continuePrompt, managerPrompt, userName){
     if(continuePrompt){
         connection.query('SELECT * FROM products', function (error, results, fields) {
           if (error) throw error;
             console.table(results);
             continueShopPrompt();
         });    
-    }else{
+    }else if(managerPrompt){
+        connection.query('SELECT * FROM products', function (error, results, fields) {
+          if (error) throw error;
+            console.table(results);
+            managerPromptInit(userName);
+        }); 
+    }else {
         connection.query('SELECT * FROM products', function (error, results, fields) {
           if (error) throw error;
             console.table(results);
